@@ -46,11 +46,14 @@ $theming-material-components-theme: mat-light-theme(
 }
 
 .theme-3 {
-  $theming-material-components-primary: mat-palette($mat-light-green);
+  img{
+    content:url(assets/images/plc-tracetronic-logo_final.png)
+  }
+  $theming-material-components-primary: mat-palette($mat-orange);
   $theming-material-components-accent: mat-palette($mat-orange, A200, A100, A400);
   $theming-material-components-warn: mat-palette($mat-red);
 
-  $theming-material-components-theme: mat-dark-theme(
+  $theming-material-components-theme: mat-light-theme(
       $theming-material-components-primary,
       $theming-material-components-accent,
       $theming-material-components-warn
