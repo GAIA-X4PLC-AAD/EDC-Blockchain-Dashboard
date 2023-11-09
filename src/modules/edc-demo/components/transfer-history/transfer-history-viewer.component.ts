@@ -1,6 +1,6 @@
 import {Component, OnInit} from '@angular/core';
 import {Observable, of} from 'rxjs';
-import {TransferProcessDto, TransferProcessService} from "../../../edc-dmgmt-client";
+import {TransferProcessDto, TransferProcessService} from "../../../mgmt-api-client";
 import {AppConfigService} from "../../../app/app-config.service";
 import {ConfirmationDialogComponent, ConfirmDialogModel} from "../confirmation-dialog/confirmation-dialog.component";
 import {MatDialog} from "@angular/material/dialog";
@@ -12,7 +12,7 @@ import {MatDialog} from "@angular/material/dialog";
 })
 export class TransferHistoryViewerComponent implements OnInit {
 
-  columns: string[] = ['id', 'creationDate', 'state', 'lastUpdated', 'connectorId', 'assetId', 'contractId', 'action'];
+  columns: string[] = ['id', 'state', 'lastUpdated', 'connectorId', 'assetId', 'contractId', 'action'];
   transferProcesses$: Observable<TransferProcessDto[]> = of([]);
   storageExplorerLinkTemplate: string | undefined;
 
@@ -28,7 +28,7 @@ export class TransferHistoryViewerComponent implements OnInit {
 
   onDeprovision(transferProcess: TransferProcessDto): void {
 
-    const dialogData = new ConfirmDialogModel("Confirm deprovision", `Deprovisioning resources for transfer [${transferProcess.id}] will take some time and once started, it cannot be stopped.`)
+    const dialogData = new ConfirmDialogModel("Confirm deprovision", `Deprovisioning resources for transfer [${transferProcess["@id"]}] will take some time and once started, it cannot be stopped.`)
     dialogData.confirmColor = "warn";
     dialogData.confirmText = "Confirm";
     dialogData.cancelText = "Abort";
@@ -36,21 +36,21 @@ export class TransferHistoryViewerComponent implements OnInit {
 
     ref.afterClosed().subscribe(res => {
       if (res) {
-        this.transferProcessService.deprovisionTransferProcess(transferProcess.id).subscribe(() => this.loadTransferProcesses());
+        this.transferProcessService.deprovisionTransferProcess(transferProcess["@id"]!).subscribe(() => this.loadTransferProcesses());
       }
     });
   }
 
   showStorageExplorerLink(transferProcess: TransferProcessDto) {
-    return transferProcess.dataDestination?.properties?.type === 'AzureStorage' && transferProcess.state === 'COMPLETED';
+    return transferProcess["edc:dataDestination"]?.properties?.type === 'AzureStorage' && transferProcess["edc:state"] === 'COMPLETED';
   }
 
   showDeprovisionButton(transferProcess: TransferProcessDto) {
-    return ['COMPLETED', 'PROVISIONED', 'REQUESTED', 'REQUESTED_ACK', 'IN_PROGRESS', 'STREAMING'].includes(transferProcess.state);
+    return ['COMPLETED', 'PROVISIONED', 'REQUESTED', 'REQUESTED_ACK', 'IN_PROGRESS', 'STREAMING'].includes(transferProcess["edc:state"]!);
   }
 
   loadTransferProcesses() {
-    this.transferProcesses$ = this.transferProcessService.getAllTransferProcesses();
+    this.transferProcesses$ = this.transferProcessService.queryAllTransferProcesses();
   }
 
   asDate(epochMillis?: number) {

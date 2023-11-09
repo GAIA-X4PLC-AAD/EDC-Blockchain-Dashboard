@@ -2,9 +2,7 @@
 
 **Please note: This repository does not contain production-grade code and is only intended for demonstration purposes.**
 
-**This fork was modified to work for the specific demonstration of connecting the EDC to the tezos-edc-interface.**
-
-EDC Data Dashboard is a dev frontend application for [EDC Data Management API](https://github.com/eclipse-dataspaceconnector/DataSpaceConnector).
+EDC Data Dashboard is a dev frontend application for [EDC Management API](https://github.com/eclipse-edc/Connector).
 
 ## Docker image
 
@@ -16,24 +14,78 @@ Provide environment variables in the docker run command in order to modify the D
 docker run --rm -p 3000:80 -e DATA_MANAGEMENT_URL="http://localhost:8182/api/v1/data" -e CATALOG_URL="http://localhost:8181/api/federatedcatalog"  johann1999/data-dashboard:linux-env
 ```
 
-## Documentation
+1. [optional] copy the current version of EDC's `management-api.yaml` file to `openapi/`. There is one checked in, so this is not required.
+2. in a shell execute
+   ```shell
+   docker run --rm -v "${PWD}:/local" openapitools/openapi-generator-cli generate -i /local/openapi/management-api.yaml -g typescript-angular -o /local/src/modules/edc-dmgmt-client/
+   ```
+   This re-generates the service and model classes.
 
 In order to try the demonstration, you need to run three applications:
 
-1. [EDC Provider](https://github.com/JulianLegler/DataSpaceConnector)
-2. [Tezos-EDC Interface](https://github.com/johannha/edc-interface/tree/w/indexer)
-3. [Frontend](https://github.com/johannha/DataDashboard/tree/main)
+## Running the frontend locally
+Should you want to run the frontend on your development machine, you'll have to configure some backend values. Those are stored in `app.config.json`, and
+by default contain the following:
 
-### Steps:
+```json
+{
+  "managementApiUrl": "{{managementApiUrl}}",
+  "catalogUrl": "{{catalogUrl}}",
+  "storageAccount": "{{account}}",
+  "storageExplorerLinkTemplate": "storageexplorer://v=1&accountid=/subscriptions/{{subscriptionId}}/resourceGroups/{{resourceGroup}}/providers/Microsoft.Storage/storageAccounts/{{account}}&subscriptionid={{subscriptionId}}&resourcetype=Azure.BlobContainer&resourcename={{container}}",
+}
+```
+Substitute the values as necessary:
+- `apiKey`: enter here what your EDC instance expects in th `x-api-key` header
+- `catalogUrl`: prepend your connector URL, e.g. `http://localhost`, assuming your catalog endpoint is exposed at port 8181, which is the default
+- `managementApiUrl`:  prepend your connector URL, e.g. `http://localhost`, assuming your IDS endpoint is exposed at port 9191
+- `storageAccount`: insert the name of an Azure Blob Storage account to which the connector has access, otherwise data transfers won't work.
 
 - Clone EDC-Interface and switch to the “w/indexer” branch.
   Follow readme instructions of edc-interface and don't forget to add the Pinata env variable. Finally run the API with `npm run serve`.
 
 - Clone this Data Dashboard Fork and run `npm install -g @angular/cli` to install Angular globally.
 
-- Run `npm install` to install all dependencies
+## Running a frondend and a connector locally (for demo purpose)
+To test the correct functionality locally you can spin up a local docker compose
+that will load the `data-dashboard` service and the `connector` one.
+First you need to change the `app.config.json` this way:
+```json
+{
+  ...
+  "managementApiUrl": "http://consumer-connector/management",
+  "catalogUrl": "http://consumer-connector/management",
+  ...
+}
+```
 
-- Run `npm run start-edc` to start provider part of the EDC (Java must installed locally). An EDC instance should now be running which implements an extension accessing the blockchain by using the Tezos client provided by EDC-Interface. Source code for this EDC version can be found in this [EDC Fork](https://github.com/JulianLegler/DataSpaceConnector).
+Then you can start the docker compose:
+```shell
+docker compose up
+```
+
+The DataDashboard will be available at `http://localhost:8080`
+
+### Running DataDashboard from the host machine (for debugging purpose)
+To have a quicker development cycle, you can also run the DataDashboard from the
+host machine using `npm start`, sending request against the connector loaded by
+docker compose.
+First you need to change the `app.config.json` this way:
+```json
+{
+  ...
+  "managementApiUrl": "http://localhost:4200/management",
+  "catalogUrl": "http://localhost:4200/management",
+  ...
+}
+```
+
+Then start the local DataDashboard:
+```shell
+npm start
+```
+
+The DataDashboard will be available at `http://localhost:4200`
 
 - Run `npm run start` to host angular frontend
 
@@ -47,11 +99,22 @@ If you have any questions regarding the Tezos Client API implementation, feel fr
 
 ## Motivational Aspects
 
-- Extend EDC functionality by managing and storing assets, policies and contract offerings as NFTs on Tezos blockchain
-- Data of assets etc. should be included inside token’s metadata to ensure integrity during negotiation phase
-- Implement a blockchain interface to realize minting and token querying functionality
-- Optimize token request by adding blockchain indexer → lower response time
-- Visualize process of asset, policy and contract offer creation in Data Dashboard → extension and modification is needed
+The docker image is now ready to be deployed to Azure Container Instances (ACI). The `app.config.json` file contains configuration which is fetched by the application at startup. This file can be overridden at deployment time by mounting a secret on `assets/config`. For each deployment you need to provide the corresponding connector backend URL, the storage account name and the API key using this secret. Deploy to ACI using the following command:
+
+```bash
+export CONNECTOR_DATA_URL=<CONNECTOR_DATA_URL>
+export CONNECTOR_CATALOG_URL=<CONNECTOR_CATALOG_URL>
+export STORAGE_ACCOUNT=<STORAGE_ACCOUNT>
+export API_KEY=<API_KEY>
+
+# deploy to ACI (when prompted for credentials use the username/password as available in Azure Portal: ACR->Access Keys)
+az container create --image ${ACR_NAME}.azurecr.io/edc-showcase/edc-data-dashboard:latest \
+--resource-group $RESOURCE_GROUP \
+--name edc-data-dashboard \
+--secrets "app.config.json"="{\"managementApiUrl\": \"$CONNECTOR_DATA_URL\", \"catalogUrl\": \"$CONNECTOR_CATALOG_URL\", \"storageAccount\": \"$STORAGE_ACCOUNT\", \"apiKey\": \"$API_KEY\"}" \
+--secrets-mount-path /usr/share/nginx/html/assets/config \
+--dns-name-label edc-data-dashboard
+```
 
 ## Outlook
 

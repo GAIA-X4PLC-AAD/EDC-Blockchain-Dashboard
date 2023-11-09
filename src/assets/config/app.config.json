@@ -1,9 +1,8 @@
 {
-  "_comment": "This file will be replaced at runtime when deployed to the cloud",
-  "dataManagementApiUrl": "http://localhost:8182/api/v1/data",
-  "catalogUrl": "http://localhost:8181/api/federatedcatalog",
-  "storageAccount": "account",
-  "storageExplorerLinkTemplate": "storageexplorer://v=1",
   "apiKey": "password",
+  "managementApiUrl": "http://localhost:9192/management",
+  "catalogUrl": "http://localhost:9191/api",
+  "storageAccount": "company2assets",
+  "storageExplorerLinkTemplate": "storageexplorer://v=1",
   "theme": "theme-2"
 }

@@ -3,7 +3,7 @@ import {MatDialog} from '@angular/material/dialog';
 import {BehaviorSubject, Observable, of} from 'rxjs';
 import {map, switchMap} from 'rxjs/operators';
 import {CatalogBrowserService} from "../../services/catalog-browser.service";
-import {ContractNegotiationDto, NegotiationInitiateRequestDto} from "../../../edc-dmgmt-client";
+import {ContractNegotiationDto, NegotiationInitiateRequestDto} from "../../../mgmt-api-client";
 import {NotificationService} from "../../services/notification.service";
 import {Router} from "@angular/router";
 import {TransferProcessStates} from "../../models/transfer-process-states";
@@ -44,7 +44,7 @@ export class CatalogBrowserComponent implements OnInit {
         switchMap(() => {
           const contractOffers$ = this.apiService.getContractOffers();
           return !!this.searchText ?
-            contractOffers$.pipe(map(contractOffers => contractOffers.filter(contractOffer => contractOffer.asset.name.toLowerCase().includes(this.searchText))))
+            contractOffers$.pipe(map(contractOffers => contractOffers.filter(contractOffer => contractOffer.id.toLowerCase().includes(this.searchText))))
             :
             contractOffers$;
         }));
@@ -55,21 +55,30 @@ export class CatalogBrowserComponent implements OnInit {
   }
 
   onNegotiateClicked(contractOffer: ContractOffer) {
+    const policy = contractOffer.policy;
+    policy["odrl:target"] = contractOffer.asset.id;
+    policy['@id'] = contractOffer.id + ":" + contractOffer.asset.id + ":" + "MzY3ZGZlYTgtYWI5OS00OWMwLThmNmYtM2Y2YmMxNGE1ZDc4";
     const initiateRequest: NegotiationInitiateRequestDto = {
-      connectorAddress: contractOffer.asset.originator,
-
-      offer: {
-        offerId: contractOffer.id + ":1337",
-        assetId: contractOffer.asset.id,
-        policy: contractOffer.policy,
+      connectorAddress: contractOffer["edc:originator"],
+      "@context": {
+        "edc": "https://w3id.org/edc/v0.0.1/ns/",
+        "odrl": "http://www.w3.org/ns/odrl/2/"
       },
-      connectorId: 'tu-berlin:blockchain:connector',
-      protocol: 'ids-multipart'
+      offer: {
+        // fix for strange offerid format required by the backend
+        offerId: contractOffer.id + ":" + contractOffer.asset.id + ":" + "MzY3ZGZlYTgtYWI5OS00OWMwLThmNmYtM2Y2YmMxNGE1ZDc4",
+        assetId: contractOffer.asset.id,
+        policy: policy,
+      },
+      connectorId: "provider",
+      consumerId: "consumer",
+      providerId: "provider",
+      protocol: 'dataspace-protocol-http'
     };
 
     const finishedNegotiationStates = [
-      "CONFIRMED",
-      "DECLINED",
+      "VERIFIED",
+      "TERMINATED",
       "ERROR"];
 
     this.apiService.initiateNegotiation(initiateRequest).subscribe(negotiationId => {
@@ -86,10 +95,10 @@ export class CatalogBrowserComponent implements OnInit {
 
           for (const negotiation of this.runningNegotiations.values()) {
             this.apiService.getNegotiationState(negotiation.id).subscribe(updatedNegotiation => {
-              if (finishedNegotiationStates.includes(updatedNegotiation.state)) {
+              if (finishedNegotiationStates.includes(updatedNegotiation["edc:state"]!)) {
                 let offerId = negotiation.offerId;
                 this.runningNegotiations.delete(offerId);
-                if (updatedNegotiation.state === "CONFIRMED") {
+                if (updatedNegotiation["edc:state"] === "VERIFIED") {
                   this.finishedNegotiations.set(offerId, updatedNegotiation);
                   this.notificationService.showInfo("Contract Negotiation complete!", "Show me!", () => {
                     this.router.navigate(['/contracts'])

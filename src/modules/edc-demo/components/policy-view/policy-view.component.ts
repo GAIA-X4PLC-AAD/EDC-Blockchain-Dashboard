@@ -1,11 +1,12 @@
 import {Component, OnInit} from '@angular/core';
-import {Policy, PolicyDefinition, PolicyService} from "../../../edc-dmgmt-client";
+import {PolicyService} from "../../../mgmt-api-client";
 import {BehaviorSubject, Observable, Observer, of} from "rxjs";
 import {first, map, switchMap} from "rxjs/operators";
 import {MatDialog} from "@angular/material/dialog";
 import {NewPolicyDialogComponent} from "../new-policy-dialog/new-policy-dialog.component";
 import {NotificationService} from "../../services/notification.service";
 import {ConfirmationDialogComponent, ConfirmDialogModel} from "../confirmation-dialog/confirmation-dialog.component";
+import {PolicyDefinition, PolicyDefinitionInput, IdResponse} from "../../../mgmt-api-client/model";
 
 @Component({
   selector: 'app-policy-view',
@@ -17,7 +18,7 @@ export class PolicyViewComponent implements OnInit {
   filteredPolicies$: Observable<PolicyDefinition[]> = of([]);
   searchText: string = '';
   private fetch$ = new BehaviorSubject(null);
-  private readonly errorOrUpdateSubscriber: Observer<string>;
+  private readonly errorOrUpdateSubscriber: Observer<IdResponse>;
 
   constructor(private policyService: PolicyService,
               private notificationService: NotificationService,
@@ -25,7 +26,7 @@ export class PolicyViewComponent implements OnInit {
 
     this.errorOrUpdateSubscriber = {
       next: x => this.fetch$.next(null),
-      error: err => this.showError(err),
+      error: err => this.showError(err, "An error occurred."),
       complete: () => {
         this.notificationService.showInfo("Successfully completed")
       },
@@ -36,11 +37,11 @@ export class PolicyViewComponent implements OnInit {
   ngOnInit(): void {
     this.filteredPolicies$ = this.fetch$.pipe(
       switchMap(() => {
-        const contractDefinitions$ = this.policyService.getAllPolicies();
+        const policyDefinitions = this.policyService.queryAllPolicies();
         return !!this.searchText ?
-          contractDefinitions$.pipe(map(policies => policies.filter(policy => this.isFiltered(policy, this.searchText))))
+          policyDefinitions.pipe(map(policies => policies.filter(policy => this.isFiltered(policy, this.searchText))))
           :
-          contractDefinitions$;
+          policyDefinitions;
       }));
   }
 
@@ -49,12 +50,18 @@ export class PolicyViewComponent implements OnInit {
   }
 
   onCreate() {
-    const dialogRef = this.dialog.open(NewPolicyDialogComponent)
-    dialogRef.afterClosed().pipe(first()).subscribe((result: PolicyDefinition) => {
-      if (result) {
-        this.policyService.createPolicy(result).subscribe(this.errorOrUpdateSubscriber);
+    const dialogRef = this.dialog.open(NewPolicyDialogComponent);
+    dialogRef.afterClosed().pipe(first()).subscribe({ next: (newPolicyDefinition: PolicyDefinitionInput) => {
+        if (newPolicyDefinition) {
+          this.policyService.createPolicy(newPolicyDefinition).subscribe(
+            {
+              next: (response: IdResponse) => this.errorOrUpdateSubscriber.next(response),
+              error: (error: Error) => this.showError(error, "An error occurred while creating the policy.")
+            }
+          );
+        }
       }
-    })
+    });
   }
 
   /**
@@ -67,19 +74,28 @@ export class PolicyViewComponent implements OnInit {
 
   delete(policy: PolicyDefinition) {
 
-    const dialogData = ConfirmDialogModel.forDelete("policy", policy.uid);
+    let policyId = policy['@id']!;
+    const dialogData = ConfirmDialogModel.forDelete("policy", policyId);
 
     const ref = this.dialog.open(ConfirmationDialogComponent, {maxWidth: '20%', data: dialogData});
 
-    ref.afterClosed().subscribe(res => {
-      if (res) {
-        this.policyService.deletePolicy(policy.uid).subscribe(this.errorOrUpdateSubscriber);
+    ref.afterClosed().subscribe({
+
+      next: (res: any) => {
+        if (res) {
+          this.policyService.deletePolicy(policyId).subscribe(
+            {
+              next: (response: IdResponse) => this.errorOrUpdateSubscriber.next(response),
+              error: (error: Error) => this.showError(error, "An error occurred while deleting the policy.")
+            }
+          );
+        }
       }
     });
   }
 
-  private showError(error: Error) {
-    console.error(error)
-    this.notificationService.showError('This policy cannot be deleted');
+  private showError(error: Error, errorMessage: string) {
+    console.error(error);
+    this.notificationService.showError(errorMessage);
   }
 }

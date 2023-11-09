@@ -2,11 +2,12 @@ import {Component, OnInit} from '@angular/core';
 import {BehaviorSubject, Observable, of} from 'rxjs';
 import {first, map, switchMap} from 'rxjs/operators';
 import {MatDialog} from '@angular/material/dialog';
-import {AssetEntryDto, AssetService,} from "../../../edc-dmgmt-client";
+import {AssetInput, Asset } from "../../../mgmt-api-client/model";
+import {AssetService} from "../../../mgmt-api-client";
 import {AssetEditorDialog} from "../asset-editor-dialog/asset-editor-dialog.component";
-import {Asset} from "../../models/asset";
 import {ConfirmationDialogComponent, ConfirmDialogModel} from "../confirmation-dialog/confirmation-dialog.component";
 import {NotificationService} from "../../services/notification.service";
+
 
 @Component({
   selector: 'edc-demo-asset-viewer',
@@ -23,10 +24,10 @@ export class AssetViewerComponent implements OnInit {
   constructor(private assetService: AssetService,
               private notificationService: NotificationService,
               private readonly dialog: MatDialog) {
-  }
+}
 
-  private showError(error: string) {
-    this.notificationService.showError("This asset cannot be deleted");
+  private showError(error: string, errorMessage: string) {
+    this.notificationService.showError(errorMessage);
     console.error(error);
   }
 
@@ -34,11 +35,10 @@ export class AssetViewerComponent implements OnInit {
     this.filteredAssets$ = this.fetch$
       .pipe(
         switchMap(() => {
-          const assets$ = this.assetService.getAllAssets().pipe(map(assets => assets.map(asset => new Asset(asset.properties))));
-          return !!this.searchText ?
-            assets$.pipe(map(assets => assets.filter(asset => asset.name.includes(this.searchText))))
-            :
-            assets$;
+          const assets$ = this.assetService.requestAssets();
+          return !!this.searchText
+            ? assets$.pipe(map(assets => assets.filter(asset => asset.name.includes(this.searchText))))
+            : assets$;
         }));
   }
 
@@ -51,28 +51,33 @@ export class AssetViewerComponent implements OnInit {
   }
 
   onDelete(asset: Asset) {
-
-    const dialogData = ConfirmDialogModel.forDelete("asset", `"${asset.name}"`)
+    const dialogData = ConfirmDialogModel.forDelete("asset", `"${asset.id}"`)
     const ref = this.dialog.open(ConfirmationDialogComponent, {maxWidth: "20%", data: dialogData});
 
-    ref.afterClosed().subscribe(res => {
-      if (res) {
-        this.assetService.removeAsset(asset.id).subscribe(() => this.fetch$.next(null),
-          err => this.showError(err),
-          () => this.notificationService.showInfo("Successfully deleted")
-        );
+    ref.afterClosed().subscribe({
+      next: res => {
+        if (res) {
+          this.assetService.removeAsset(asset.id).subscribe({
+            next: () => this.fetch$.next(null),
+            error: err => this.showError(err, "This asset cannot be deleted"),
+            complete: () => this.notificationService.showInfo("Successfully deleted")
+          });
+        }
       }
     });
-
   }
 
   onCreate() {
     const dialogRef = this.dialog.open(AssetEditorDialog);
-    dialogRef.afterClosed().pipe(first()).subscribe((result: { assetEntryDto?: AssetEntryDto }) => {
-      const newAsset = result?.assetEntryDto;
+    dialogRef.afterClosed().pipe(first()).subscribe((result: { assetInput?: AssetInput }) => {
+      const newAsset = result?.assetInput;
       if (newAsset) {
-        this.assetService.createAsset(newAsset).subscribe(() => this.fetch$.next(null), error => this.showError(error), () => this.notificationService.showInfo("Successfully created"));
+        this.assetService.createAsset(newAsset).subscribe({
+          next: ()=> this.fetch$.next(null),
+          error: err => this.showError(err, "This asset cannot be created"),
+          complete: () => this.notificationService.showInfo("Successfully created"),
+        })
       }
-    });
-  }
+  })
+}
 }

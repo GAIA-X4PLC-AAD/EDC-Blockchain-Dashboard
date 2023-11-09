@@ -5,9 +5,10 @@ import {MatDialog} from '@angular/material/dialog';
 import {
   ContractDefinitionEditorDialog
 } from '../contract-definition-editor-dialog/contract-definition-editor-dialog.component';
-import {ContractDefinitionDto, ContractDefinitionService} from "../../../edc-dmgmt-client";
+import { ContractDefinitionService } from "../../../mgmt-api-client";
 import {ConfirmationDialogComponent, ConfirmDialogModel} from "../confirmation-dialog/confirmation-dialog.component";
 import {NotificationService} from "../../services/notification.service";
+import { ContractDefinitionInput, ContractDefinition } from "../../../mgmt-api-client/model"
 
 
 @Component({
@@ -17,7 +18,7 @@ import {NotificationService} from "../../services/notification.service";
 })
 export class ContractDefinitionViewerComponent implements OnInit {
 
-  filteredContractDefinitions$: Observable<ContractDefinitionDto[]> = of([]);
+  filteredContractDefinitions$: Observable<ContractDefinition[]> = of([]);
   searchText = '';
   private fetch$ = new BehaviorSubject(null);
 
@@ -30,9 +31,9 @@ export class ContractDefinitionViewerComponent implements OnInit {
     this.filteredContractDefinitions$ = this.fetch$
       .pipe(
         switchMap(() => {
-          const contractDefinitions$ = this.contractDefinitionService.getAllContractDefinitions();
+          const contractDefinitions$ = this.contractDefinitionService.queryAllContractDefinitions();
           return !!this.searchText ?
-            contractDefinitions$.pipe(map(contractDefinitions => contractDefinitions.filter(contractDefinition => contractDefinition.id.toLowerCase().includes(this.searchText))))
+            contractDefinitions$.pipe(map(contractDefinitions => contractDefinitions.filter(contractDefinition => contractDefinition['@id']!.toLowerCase().includes(this.searchText))))
             :
             contractDefinitions$;
         }));
@@ -42,14 +43,15 @@ export class ContractDefinitionViewerComponent implements OnInit {
     this.fetch$.next(null);
   }
 
-  onDelete(contractDefinition: ContractDefinitionDto) {
+  onDelete(contractDefinition: ContractDefinition) {
     const dialogData = ConfirmDialogModel.forDelete("contract definition", contractDefinition.id);
 
     const ref = this.dialog.open(ConfirmationDialogComponent, {maxWidth: '20%', data: dialogData});
 
     ref.afterClosed().subscribe(res => {
       if (res) {
-        this.contractDefinitionService.deleteContractDefinition(contractDefinition.id).subscribe(() => this.fetch$.next(null));
+        this.contractDefinitionService.deleteContractDefinition(contractDefinition.id)
+          .subscribe(() => this.fetch$.next(null));
       }
     });
 
@@ -57,12 +59,15 @@ export class ContractDefinitionViewerComponent implements OnInit {
 
   onCreate() {
     const dialogRef = this.dialog.open(ContractDefinitionEditorDialog);
-    dialogRef.afterClosed().pipe(first()).subscribe((result: { contractDefinition?: ContractDefinitionDto }) => {
+    dialogRef.afterClosed().pipe(first()).subscribe((result: { contractDefinition?: ContractDefinitionInput }) => {
       const newContractDefinition = result?.contractDefinition;
       if (newContractDefinition) {
-        this.contractDefinitionService.createContractDefinition(newContractDefinition).subscribe(() => this.fetch$.next(null),
-          error => this.notificationService.showError("Contract definition cannot be created"),
-          () => this.notificationService.showInfo("Contract definition created"));
+        this.contractDefinitionService.createContractDefinition(newContractDefinition)
+          .subscribe({
+              next: () => this.fetch$.next(null),
+              error: () => this.notificationService.showError("Contract definition cannot be created"),
+              complete: () => this.notificationService.showInfo("Contract definition created")
+          });
       }
     });
   }

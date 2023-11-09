@@ -1,7 +1,7 @@
-import {Component, Inject, OnInit} from '@angular/core';
-import {AssetDto, AssetEntryDto, AssetService} from "../../../edc-dmgmt-client";
-import {MAT_DIALOG_DATA, MatDialogRef} from "@angular/material/dialog";
-import {StorageType} from "../../models/storage-type";
+import { Component, Inject, OnInit } from '@angular/core';
+import { AssetInput } from "@think-it-labs/edc-connector-client";
+import { MatDialogRef } from "@angular/material/dialog";
+import { StorageType } from "../../models/storage-type";
 
 
 @Component({
@@ -118,7 +118,11 @@ export class AssetEditorDialog implements OnInit {
     this.gaiaxSelfdescriptionJson = JSON.parse(this.gaiaxSelfdescription);
   }
 
-  constructor(private assetService: AssetService, private dialogRef: MatDialogRef<AssetEditorDialog>,
+  originator: string = 'http://localhost:8184/protocol';
+  baseUrl: string = "http://techslides.com/demos/samples/sample.txt";
+
+
+  constructor(private dialogRef: MatDialogRef<AssetEditorDialog>,
       @Inject('STORAGE_TYPES') public storageTypes: StorageType[]) {
   }
 
@@ -127,30 +131,25 @@ export class AssetEditorDialog implements OnInit {
   }
 
   onSave() {
-    const assetEntryDto: AssetEntryDto = {
-      asset: {
-        properties: {
-          "asset:prop:name": this.name,
-          "asset:prop:version": this.version,
-          "asset:prop:id": this.id,
-          "asset:prop:contenttype": this.contenttype,
-          "asset:prop:gaiax:selfdescription": this.gaiaxSelfdescriptionJson,
-          "asset:prop:originator": this.originator,
-        }
+    const assetInput: AssetInput = {
+      "@id": this.id,
+      properties: {
+        "name": this.name,
+        "version": this.version,
+        "contenttype": this.contenttype,
+        "originator": this.originator,
       },
       dataAddress: {
-        properties: {
-          "type": this.storageTypeId,
-          "name": this.id,
-          "baseUrl": this.baseUrl
-          // "account": this.account,
-          // "container": this.container,
-          // "blobname": this.blobname,
-          // "keyName": `${this.account}-key1`
-        },
+        "type": this.storageTypeId,
+        "name": this.id,
+        "baseUrl": this.baseUrl,
+        //"account": this.account,
+        //"container": this.container,
+        //"blobname": this.blobname,
+        //"keyName": `${this.account}-key1`
       }
     };
 
-    this.dialogRef.close({ assetEntryDto });
+    this.dialogRef.close({ assetInput });
   }
 }
