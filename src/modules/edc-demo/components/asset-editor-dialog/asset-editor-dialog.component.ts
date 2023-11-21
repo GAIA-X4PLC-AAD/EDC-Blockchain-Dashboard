@@ -118,9 +118,6 @@ export class AssetEditorDialog implements OnInit {
     this.gaiaxSelfdescriptionJson = JSON.parse(this.gaiaxSelfdescription);
   }
 
-  originator: string = 'http://localhost:8184/protocol';
-  baseUrl: string = "http://techslides.com/demos/samples/sample.txt";
-
 
   constructor(private dialogRef: MatDialogRef<AssetEditorDialog>,
       @Inject('STORAGE_TYPES') public storageTypes: StorageType[]) {
