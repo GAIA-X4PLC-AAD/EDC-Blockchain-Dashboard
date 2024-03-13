@@ -13,5 +13,46 @@
 </head>
 <body class="mat-typography">
   <app-root></app-root>
+  <script>
+    import { contractConfig } from "../contractConfig.js";
+    const socket = new WebSocket('ws://localhost:3005');
+
+    socket.addEventListener('message', (event) => {
+      const data = JSON.parse(event.data);
+      notify(data);
+    });
+
+    if ("Notification" in window) {
+      if (Notification.permission === 'granted') {
+        notify();
+      } else {
+        Notification.requestPermission().then((res) => {
+          if (res === 'granted'){
+            notify();
+          } else if (res === 'denied') {
+            console.log("Notifications access denied");
+          } else if (res === 'default') {
+            console.log("Notification permission not given");
+          }
+        })
+      }
+    } else {
+      console.error("Notification not supported");
+    }
+
+    function notify(data) {
+      const notification = new Notification("New Contract Definition found", {
+        body: 'Mint endpoint has been triggered on ' + contractConfig.contractAddress
+      });
+
+      notification.addEventListener('click', () => {
+        window.open('https://better-call.dev/ghostnet/' + contractConfig.contractAddress + '/tokens');
+      })
+
+      setTimeout(() => {
+        notification.close();
+      }, 10000)
+    }
+  </script>
 </body>
 </html>
