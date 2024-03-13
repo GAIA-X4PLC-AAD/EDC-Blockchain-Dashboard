@@ -13,8 +13,8 @@
 </head>
 <body class="mat-typography">
   <app-root></app-root>
-  <script>
-    import { contractConfig } from "../contractConfig.js";
+  <script type="module">
+    //import { contractConfig } from "../contractConfig.js";
     const socket = new WebSocket('ws://localhost:3005');
 
     socket.addEventListener('message', (event) => {
@@ -24,11 +24,11 @@
 
     if ("Notification" in window) {
       if (Notification.permission === 'granted') {
-        notify();
+        console.log("Notifications granted");
       } else {
         Notification.requestPermission().then((res) => {
           if (res === 'granted'){
-            notify();
+            console.log("Notifications granted");
           } else if (res === 'denied') {
             console.log("Notifications access denied");
           } else if (res === 'default') {
@@ -42,11 +42,13 @@
 
     function notify(data) {
       const notification = new Notification("New Contract Definition found", {
-        body: 'Mint endpoint has been triggered on ' + contractConfig.contractAddress
+        body: 'Mint endpoint has been triggered on KT1QDheV2TkL3mitzYNKzunWYhSe6MmEPTh5'
+        //body: 'Mint endpoint has been triggered on ' + contractConfig.contractAddress
       });
 
       notification.addEventListener('click', () => {
-        window.open('https://better-call.dev/ghostnet/' + contractConfig.contractAddress + '/tokens');
+        //window.open('https://better-call.dev/ghostnet/' + contractConfig.contractAddress + '/tokens');
+        window.open('https://better-call.dev/ghostnet/KT1QDheV2TkL3mitzYNKzunWYhSe6MmEPTh5/tokens');
       })
 
       setTimeout(() => {
