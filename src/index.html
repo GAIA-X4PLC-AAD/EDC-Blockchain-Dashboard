@@ -14,8 +14,8 @@
 <body class="mat-typography">
   <app-root></app-root>
   <script type="module">
-    //import { contractConfig } from "../contractConfig.js";
     const socket = new WebSocket('ws://localhost:3005');
+
 
     socket.addEventListener('message', (event) => {
       const data = JSON.parse(event.data);
@@ -42,13 +42,11 @@
 
     function notify(data) {
       const notification = new Notification("New Contract Definition found", {
-        body: 'Mint endpoint has been triggered on KT1QDheV2TkL3mitzYNKzunWYhSe6MmEPTh5'
-        //body: 'Mint endpoint has been triggered on ' + contractConfig.contractAddress
+        body: 'Mint endpoint has been triggered on ' + data.destination + '.'
       });
 
       notification.addEventListener('click', () => {
-        //window.open('https://better-call.dev/ghostnet/' + contractConfig.contractAddress + '/tokens');
-        window.open('https://better-call.dev/ghostnet/KT1QDheV2TkL3mitzYNKzunWYhSe6MmEPTh5/tokens');
+        window.open('https://better-call.dev/ghostnet/' + data.destination + '/tokens');
       })
 
       setTimeout(() => {
