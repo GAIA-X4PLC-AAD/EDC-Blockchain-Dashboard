@@ -329,6 +329,11 @@ export class AssetEditorDialog implements OnInit {
   }
 
   onSave() {
+    // Check if claimsListJson and gxParticipantCredentialsJson are not empty objects
+    if (Object.keys(this.claimsListJson).length === 0 || Object.keys(this.gxParticipantCredentialsJson).length === 0) {
+      this.showError("Validation Error", "Claims List or Participant Credentials are not properly set. Please check the format.");
+      return; // Stop execution if validation fails
+    }
     const assetInput: AssetInput = {
       "@id": this.id,
       properties: {
