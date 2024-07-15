@@ -1,8 +1,12 @@
+import { environment } from 'src/environments/environment';
 import { Component, Inject, OnInit } from '@angular/core';
 import { AssetInput } from "@think-it-labs/edc-connector-client";
 import { MatDialogRef } from "@angular/material/dialog";
 import { StorageType } from "../../models/storage-type";
-import {NotificationService} from "../../services/notification.service";
+import { NotificationService } from "../../services/notification.service";
+import { HttpClient } from '@angular/common/http';
+import { MatDialog } from '@angular/material/dialog';
+import { ConfirmationDialogComponent, ConfirmDialogModel } from '../confirmation-dialog/confirmation-dialog.component';
 
 
 @Component({
@@ -28,10 +32,15 @@ export class AssetEditorDialog implements OnInit {
   claimsListJson: any = {};
   gxParticipantCredentials: string = "";
   gxParticipantCredentialsJson: any = {};
+  claimComplianceProviderResponse: string = ""
+
+  claimComplianceProviderEndpoint = environment.claimComplianceProviderEndpoint;
 
   constructor(private dialogRef: MatDialogRef<AssetEditorDialog>,
               @Inject('STORAGE_TYPES') public storageTypes: StorageType[],
-              private notificationService: NotificationService) {
+              private notificationService: NotificationService,
+              private http: HttpClient,
+              private dialog: MatDialog) {
 
   }
 
@@ -328,12 +337,80 @@ export class AssetEditorDialog implements OnInit {
     this.checkAndAssignGxParticipantCredentials();
   }
 
-  onSave() {
+  onCheckCompliance(): void {
+    console.log('Checking compliance...');
     // Check if claimsListJson and gxParticipantCredentialsJson are not empty objects
-    if (Object.keys(this.claimsListJson).length === 0 || Object.keys(this.gxParticipantCredentialsJson).length === 0) {
-      this.showError("Validation Error", "Claims List or Participant Credentials are not properly set. Please check the format.");
+    if (! this.checkForValidJson()) {
       return; // Stop execution if validation fails
     }
+
+    // prepare payload
+    const payload = {
+      claims: this.claimsListJson,
+      verifiableCredentials: this.gxParticipantCredentialsJson
+    };
+
+    this.notificationService.showInfo("Compliance check started. This may take a while...");
+    this.http.post(this.claimComplianceProviderEndpoint, payload).subscribe({
+      next: (response: any) => {
+        console.log('Compliance check successful', response);
+        this.claimComplianceProviderResponse = JSON.stringify(response);
+        this.notificationService.showInfo("Compliance check successful!");
+      },
+      error: (error: any) => {
+        console.error('Compliance check failed', error);
+        let messageToShow = JSON.stringify(error, null, 2);
+        if (error && typeof error === 'object' && error.message) {
+          messageToShow = error.message;
+          if (error.errorDetails) {
+            messageToShow += '\n\n' + error.errorDetails;
+          }
+        }
+        this.showError("Error checking compliance", messageToShow);
+        this.claimComplianceProviderResponse = "";
+      }
+    });
+  }
+
+  onSave() {
+    // Check if claimsListJson and gxParticipantCredentialsJson are not empty objects
+    if (!this.checkForValidJson()) {
+      return; // Stop execution if validation fails
+    }
+
+    // Check if claimComplianceProviderResponse is empty
+    if (this.claimComplianceProviderResponse === "") {
+      const dialogData = new ConfirmDialogModel("Confirmation needed",
+        "The compliance check has not been performed. Do you want to proceed?");
+      dialogData.confirmText = "Yes";
+      dialogData.cancelText = "No";
+      dialogData.confirmColor = "warn";
+
+      const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+        width: '400px',
+        data: dialogData
+      });
+
+      dialogRef.afterClosed().subscribe((result:boolean) => {
+        if (result) {
+          console.log('User confirmed action');
+          this.proceedWithSave();
+        } else {
+          console.log('User cancelled action');
+        }
+      });
+    }
+    else {
+      this.proceedWithSave();
+    }
+  }
+
+  private proceedWithSave() {
+    // Base64 encode claimsList and gxParticipantCredentials since EDC backend cannot handle nested json :(
+    const encodedComplianceProviderResponse = btoa(this.claimComplianceProviderResponse);
+    const encodedClaimsList = btoa(this.claimsList);
+    const encodedGxParticipantCredentials = btoa(this.gxParticipantCredentials);
+
     const assetInput: AssetInput = {
       "@id": this.id,
       properties: {
@@ -341,8 +418,9 @@ export class AssetEditorDialog implements OnInit {
         "version": this.version,
         "contenttype": this.contenttype,
         "originator": this.originator,
-        "claimsList": this.claimsListJson,
-        "gxParticipantCredentials": this.gxParticipantCredentialsJson
+        "claimComplianceProviderResponse": encodedComplianceProviderResponse,
+        "claimsList": encodedClaimsList,
+        "gxParticipantCredentials": encodedGxParticipantCredentials
       },
       dataAddress: {
         "type": this.storageTypeId,
@@ -350,7 +428,21 @@ export class AssetEditorDialog implements OnInit {
         "baseUrl": this.baseUrl,
       }
     };
+    this.dialogRef.close({assetInput});
+  }
 
-    this.dialogRef.close({ assetInput });
+  private checkForValidJson()  {
+    // Check if claimsListJson is an empty object
+    if (Object.keys(this.claimsListJson).length === 0) {
+      this.showError("Validation Error", "Value in field Claims List is not a valid json string. Please check the format.");
+      return false;
+    }
+
+    // Check if gxParticipantCredentialsJson is an empty object
+    if (Object.keys(this.gxParticipantCredentialsJson).length === 0) {
+      this.showError("Validation Error", "Value in field Participant Credentials is not a valid json string. Please check the format.");
+      return false
+    }
+    return true;
   }
 }
