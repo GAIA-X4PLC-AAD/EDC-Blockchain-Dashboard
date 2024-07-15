@@ -34,6 +34,8 @@ export class AssetEditorDialog implements OnInit {
   gxParticipantCredentialsJson: any = {};
   claimComplianceProviderResponse: string = ""
 
+  isLoading: boolean = false;
+
   claimComplianceProviderEndpoint = environment.claimComplianceProviderEndpoint;
 
   constructor(private dialogRef: MatDialogRef<AssetEditorDialog>,
@@ -351,11 +353,13 @@ export class AssetEditorDialog implements OnInit {
     };
 
     this.notificationService.showInfo("Compliance check started. This may take a while...");
+    this.isLoading = true;
     this.http.post(this.claimComplianceProviderEndpoint, payload).subscribe({
       next: (response: any) => {
         console.log('Compliance check successful', response);
         this.claimComplianceProviderResponse = JSON.stringify(response);
         this.notificationService.showInfo("Compliance check successful!");
+        this.isLoading = false;
       },
       error: (error: any) => {
         console.error('Compliance check failed', error);
@@ -368,6 +372,7 @@ export class AssetEditorDialog implements OnInit {
         }
         this.showError("Error checking compliance", messageToShow);
         this.claimComplianceProviderResponse = "";
+        this.isLoading = false;
       }
     });
   }

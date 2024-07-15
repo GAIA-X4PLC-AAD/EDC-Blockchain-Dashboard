@@ -60,15 +60,15 @@
 
 
 <mat-dialog-actions>
-  <button (click)="onSave()" color="accent" mat-stroked-button>
+  <button (click)="onSave()" color="accent" mat-stroked-button [disabled]="isLoading">
     <mat-icon>add_circle_outline</mat-icon> Create
   </button>
 
-  <button (click)="onCheckCompliance()" color="accent" mat-stroked-button>
+  <button (click)="onCheckCompliance()" color="accent" mat-stroked-button [disabled]="isLoading">
     <mat-icon>check_circle_outline</mat-icon> Check Compliance
   </button>
 
-  <button color="accent" mat-dialog-close mat-stroked-button>
+  <button color="accent" mat-dialog-close mat-stroked-button [disabled]="isLoading">
     <mat-icon>cancel</mat-icon> Cancel
   </button>
 </mat-dialog-actions>
