@@ -32,7 +32,8 @@ export class AssetEditorDialog implements OnInit {
   claimsListJson: any = {};
   gxParticipantCredentials: string = "";
   gxParticipantCredentialsJson: any = {};
-  claimComplianceProviderResponse: string = ""
+  claimComplianceProviderResponse: string = "";
+  claimComplianceProviderCheckboxChecked: boolean = false;
 
   isLoading: boolean = false;
 
@@ -333,6 +334,8 @@ export class AssetEditorDialog implements OnInit {
   }
 
   ngOnInit(): void {
+    this.claimComplianceProviderResponse = "";
+    this.updateCheckboxState();
     this.initClaimsList();
     this.initGxParticipantCredentials();
     this.checkAndAssignClaimsList();
@@ -358,6 +361,7 @@ export class AssetEditorDialog implements OnInit {
       next: (response: any) => {
         console.log('Compliance check successful', response);
         this.claimComplianceProviderResponse = JSON.stringify(response);
+        this.updateCheckboxState();
         this.notificationService.showInfo("Compliance check successful!");
         this.isLoading = false;
       },
@@ -369,9 +373,13 @@ export class AssetEditorDialog implements OnInit {
           if (error.errorDetails) {
             messageToShow += '\n\n' + error.errorDetails;
           }
+          if (error.exceptionText) {
+            messageToShow += '\n\n' + error.exceptionText;
+          }
         }
         this.showError("Error checking compliance", messageToShow);
         this.claimComplianceProviderResponse = "";
+        this.updateCheckboxState();
         this.isLoading = false;
       }
     });
@@ -449,5 +457,9 @@ export class AssetEditorDialog implements OnInit {
       return false
     }
     return true;
+  }
+
+  updateCheckboxState(): void {
+    this.claimComplianceProviderCheckboxChecked = !!(this.claimComplianceProviderResponse && this.claimComplianceProviderResponse.length > 0);
   }
 }

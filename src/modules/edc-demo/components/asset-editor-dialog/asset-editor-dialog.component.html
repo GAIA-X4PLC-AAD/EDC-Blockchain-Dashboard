@@ -35,11 +35,17 @@
       <mat-label>Base URL</mat-label>
       <input [(ngModel)]="baseUrl" matInput>
     </mat-form-field>
+  </div>
 
+  <div>
     <mat-form-field class="form-field" color="accent" id="form-field-originator">
       <mat-label>Originator</mat-label>
       <input [(ngModel)]="originator" matInput>
     </mat-form-field>
+
+    <mat-checkbox [(ngModel)]="claimComplianceProviderCheckboxChecked" disabled>
+      Compliance Check Passed
+    </mat-checkbox>
   </div>
   <div>
     <mat-form-field class="form-field-full" color="accent" id="form-field-claimsList">
