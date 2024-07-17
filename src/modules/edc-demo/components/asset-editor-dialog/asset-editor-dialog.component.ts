@@ -367,15 +367,22 @@ export class AssetEditorDialog implements OnInit {
       },
       error: (error: any) => {
         console.error('Compliance check failed', error);
-        let messageToShow = JSON.stringify(error, null, 2);
-        if (error && typeof error === 'object' && error.message) {
-          messageToShow = error.message;
-          if (error.errorDetails) {
-            messageToShow += '\n\n' + error.errorDetails;
+        let messageToShow = "Compliance check failed: ";
+        // Check if the error response body exists and contains the required fields
+        if (error && error.error) {
+          const errorBody = error.error;
+          if (errorBody.message) {
+            messageToShow += '\n\nMessage: ' + errorBody.message;
           }
-          if (error.exceptionText) {
-            messageToShow += '\n\n' + error.exceptionText;
+          if (errorBody.errorDetails) {
+            messageToShow += '\n\nError Details: ' + errorBody.errorDetails;
           }
+          if (errorBody.exceptionMessage) {
+            messageToShow += '\n\nException Message: ' + errorBody.exceptionMessage;
+          }
+        } else {
+          // Fallback message if the error structure is not as expected
+          messageToShow += 'An unexpected error occurred.';
         }
         this.showError("Error checking compliance", messageToShow);
         this.claimComplianceProviderResponse = "";
