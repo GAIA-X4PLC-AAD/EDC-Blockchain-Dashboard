@@ -42,6 +42,13 @@
             <div class="asset-property" mat-line>Version</div>
             <div mat-line>{{asset.properties.optionalValue('edc','version')}}</div>
           </mat-list-item>
+          <mat-list-item>
+            <mat-icon mat-list-icon>check</mat-icon>
+            <div class="asset-property" mat-line>Compliance</div>
+            <div mat-line>
+              {{ asset.properties.optionalValue('edc', 'claimComplianceProviderResponse') ? 'Compliance checked' : 'Compliance not checked' }}
+            </div>
+          </mat-list-item>
         </mat-list>
       </mat-card-content>
 

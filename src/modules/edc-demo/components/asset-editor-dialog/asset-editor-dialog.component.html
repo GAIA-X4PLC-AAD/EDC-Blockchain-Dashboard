@@ -2,7 +2,7 @@
   <div>
     <mat-form-field class="form-field" color="accent">
       <mat-label>Id</mat-label>
-      <input [(ngModel)]="id" matInput (ngModelChange)="updateGaiaxSelfDescription()">
+      <input [(ngModel)]="id" matInput>
     </mat-form-field>
     <mat-form-field class="form-field" color="accent">
       <mat-label>Name</mat-label>
@@ -35,22 +35,46 @@
       <mat-label>Base URL</mat-label>
       <input [(ngModel)]="baseUrl" matInput>
     </mat-form-field>
+  </div>
 
+  <div>
     <mat-form-field class="form-field" color="accent" id="form-field-originator">
       <mat-label>Originator</mat-label>
       <input [(ngModel)]="originator" matInput>
     </mat-form-field>
 
+    <mat-checkbox [(ngModel)]="claimComplianceProviderCheckboxChecked" disabled>
+      Compliance Check Passed
+    </mat-checkbox>
+  </div>
+  <div>
+    <mat-form-field class="form-field-full" color="accent" id="form-field-claimsList">
+      <span matTooltip="Claims in JSON-LD format may be of the Gaia-X types ServiceOffering, DataResource, ServiceAccessPoint and more or even domain specific types.">
+        <mat-label>List of Gaia-X or domain specific claims</mat-label>
+      </span>
+      <textarea [(ngModel)]="claimsList" (ngModelChange)="checkAndAssignClaimsList()" matInput rows="10"></textarea>
+    </mat-form-field>
+
+    <mat-form-field class="form-field-full" color="accent" id="form-field-gxParticipantCredentials">
+      <span matTooltip="The three participant credentials should be of type LegalParticipant, legalRegistrationNumer and GaiaXTermsAndConditions">
+        <mat-label>List of three Gaia-X participant credentials</mat-label>
+      </span>
+      <textarea [(ngModel)]="gxParticipantCredentials" (ngModelChange)="checkAndAssignGxParticipantCredentials()" matInput rows="10"></textarea>
+    </mat-form-field>
   </div>
 </mat-dialog-content>
 
 
 <mat-dialog-actions>
-  <button (click)="onSave()" color="accent" mat-stroked-button>
+  <button (click)="onSave()" color="accent" mat-stroked-button [disabled]="isLoading">
     <mat-icon>add_circle_outline</mat-icon> Create
   </button>
 
-  <button color="accent" mat-dialog-close mat-stroked-button>
+  <button (click)="onCheckCompliance()" color="accent" mat-stroked-button [disabled]="isLoading">
+    <mat-icon>check_circle_outline</mat-icon> Check Compliance
+  </button>
+
+  <button color="accent" mat-dialog-close mat-stroked-button [disabled]="isLoading">
     <mat-icon>cancel</mat-icon> Cancel
   </button>
 </mat-dialog-actions>
