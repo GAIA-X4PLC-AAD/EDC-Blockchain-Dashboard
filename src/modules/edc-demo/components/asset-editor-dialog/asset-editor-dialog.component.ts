@@ -27,6 +27,10 @@ export class AssetEditorDialog implements OnInit {
   blobname: string = '';
 
   originator: string = 'http://connector-1:8184/protocol';
+  originatorExamples: string[] = [
+    'http://connector-1:8184/protocol',
+    'https://edc-pr.gxfs.gx4fm.org/api/v1/dsp'
+  ];
   baseUrl: string = "http://techslides.com/demos/samples/sample.txt";
 
   claimsList: string = "";

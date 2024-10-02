@@ -27,6 +27,15 @@
         </mat-option>
       </mat-select>
     </mat-form-field>
+    <mat-form-field class="form-field" color="accent" id="form-field-originator">
+      <mat-label>Originator</mat-label>
+      <input [(ngModel)]="originator" matInput [matAutocomplete]="auto">
+      <mat-autocomplete #auto="matAutocomplete">
+        <mat-option *ngFor="let example of originatorExamples" [value]="example">
+          {{example}}
+        </mat-option>
+      </mat-autocomplete>
+    </mat-form-field>
   </div>
   <div *ngIf="storageTypeId === 'AzureStorage' || storageTypeId === 'AmazonS3'">
     <mat-form-field class="form-field" color="accent" id="form-field-account">
@@ -48,10 +57,6 @@
     <mat-form-field class="form-field" color="accent" id="form-field-baseUrl">
       <mat-label>Base URL</mat-label>
       <input [(ngModel)]="baseUrl" matInput>
-    </mat-form-field>
-    <mat-form-field class="form-field" color="accent" id="form-field-originator">
-      <mat-label>Originator</mat-label>
-      <input [(ngModel)]="originator" matInput>
     </mat-form-field>
   </div>
   <div>
