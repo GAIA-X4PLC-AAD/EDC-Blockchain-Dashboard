@@ -72,6 +72,7 @@ import { ConfirmationDialogComponent } from './components/confirmation-dialog/co
     MatListModule,
     RouterModule,
     MatProgressSpinnerModule,
+    MatAutocompleteModule,
     MatCheckboxModule
   ],
   declarations: [

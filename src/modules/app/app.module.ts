@@ -36,6 +36,7 @@ import { EdcConnectorClient } from "@think-it-labs/edc-connector-client";
     MatIconModule,
     MatListModule,
     EdcDemoModule,
+    MatAutocompleteModule,
     MatSnackBarModule
   ],
   declarations: [

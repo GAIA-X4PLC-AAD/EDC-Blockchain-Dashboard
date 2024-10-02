@@ -7,6 +7,7 @@ import { NotificationService } from "../../services/notification.service";
 import { HttpClient } from '@angular/common/http';
 import { MatDialog } from '@angular/material/dialog';
 import { ConfirmationDialogComponent, ConfirmDialogModel } from '../confirmation-dialog/confirmation-dialog.component';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 
 
 @Component({
