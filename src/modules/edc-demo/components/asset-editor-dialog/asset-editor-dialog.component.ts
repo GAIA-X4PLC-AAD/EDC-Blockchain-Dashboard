@@ -168,7 +168,7 @@ export class AssetEditorDialog implements OnInit {
             "@type": "xsd:string"
           },
           "gx:host": {
-            "@value": "edcdb-pr.gxfs.gx4fm.org/",
+            "@value": "edc-pr.gxfs.gx4fm.org/",
             "@type": "xsd:string"
           },
           "gx:protocol": {
