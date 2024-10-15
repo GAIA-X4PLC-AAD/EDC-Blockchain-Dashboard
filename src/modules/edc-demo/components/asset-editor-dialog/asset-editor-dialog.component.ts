@@ -7,6 +7,7 @@ import { NotificationService } from "../../services/notification.service";
 import { HttpClient } from '@angular/common/http';
 import { MatDialog } from '@angular/material/dialog';
 import { ConfirmationDialogComponent, ConfirmDialogModel } from '../confirmation-dialog/confirmation-dialog.component';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 
 
 @Component({
@@ -22,10 +23,15 @@ export class AssetEditorDialog implements OnInit {
   contenttype: string = '';
 
   storageTypeId: string = 'HttpData';
-  account: string = '';
+  account: string = 'msgedcstorage';
   container: string = 'src-container';
+  blobname: string = '';
 
   originator: string = 'http://connector-1:8184/protocol';
+  originatorExamples: string[] = [
+    'http://connector-1:8184/protocol',
+    'https://edc-pr.gxfs.gx4fm.org/api/v1/dsp'
+  ];
   baseUrl: string = "http://techslides.com/demos/samples/sample.txt";
 
   claimsList: string = "";
@@ -158,11 +164,11 @@ export class AssetEditorDialog implements OnInit {
           "@id": "https://www.gaia-x4plcaad.info/claims/service-access-point/fe9f0d7f-3a80-48ef-9630-a7c9c3c1e78f",
           "@type": "gx:ServiceAccessPoint",
           "gx:name": {
-            "@value": "Provider EDC",
+            "@value": "edc_pr",
             "@type": "xsd:string"
           },
           "gx:host": {
-            "@value": "edcdb-pr.gxfs.gx4fm.org/",
+            "@value": "edc-pr.gxfs.gx4fm.org/",
             "@type": "xsd:string"
           },
           "gx:protocol": {
@@ -446,6 +452,10 @@ export class AssetEditorDialog implements OnInit {
         "type": this.storageTypeId,
         "name": this.id,
         "baseUrl": this.baseUrl,
+        "account": this.account,
+        "container": this.container,
+        "blobname": this.blobname,
+        "keyName": `${this.account}-key1`
       }
     };
     this.dialogRef.close({assetInput});

@@ -2,6 +2,7 @@ import {NgModule} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {HttpClientModule} from '@angular/common/http';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
+import {MatAutocompleteModule} from '@angular/material/autocomplete';
 import {MatInputModule} from '@angular/material/input';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatSelectModule} from '@angular/material/select';
@@ -72,6 +73,7 @@ import { ConfirmationDialogComponent } from './components/confirmation-dialog/co
     MatListModule,
     RouterModule,
     MatProgressSpinnerModule,
+    MatAutocompleteModule,
     MatCheckboxModule
   ],
   declarations: [
